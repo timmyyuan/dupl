@@ -53,6 +53,41 @@ Examples:
         The same as above.
 ```
 
+## Package API
+
+This fork also exposes a package API for integrations that need structured results
+and golangci-lint-compatible JSON output:
+
+```go
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+
+	dupl "github.com/mibk/dupl/pkg"
+)
+
+func main() {
+	opts := dupl.DefaultOptions()
+	opts.Threshold = 100
+
+	report, err := dupl.CheckGolangCILintJSON([]string{"."}, opts)
+	if err != nil {
+		panic(err)
+	}
+
+	data, err := json.Marshal(report)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(data))
+}
+```
+
+Use `CheckPaths` when you need Heuris-native diagnostics with clone group
+metadata such as `Hash`, `GroupID`, and `DuplicateOf`.
+
 ## Example
 
 The reduced output of this command with the following parameters for the
