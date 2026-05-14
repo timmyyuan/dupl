@@ -19,9 +19,10 @@ const (
 )
 
 type Options struct {
-	Threshold     int
-	IncludeVendor bool
-	SkipTests     bool
+	Threshold             int
+	IncludeVendor         bool
+	SkipTests             bool
+	ExcludePathSubstrings []string
 }
 
 type Diagnostic struct {
@@ -85,6 +86,9 @@ func CheckPaths(paths []string, opts Options) ([]Diagnostic, error) {
 
 	var files []string
 	for _, path := range paths {
+		if pathExcluded(path, opts.ExcludePathSubstrings) {
+			continue
+		}
 		info, err := os.Lstat(path)
 		if err != nil {
 			return nil, err
@@ -101,6 +105,9 @@ func CheckPaths(paths []string, opts Options) ([]Diagnostic, error) {
 				return err
 			}
 			if info.IsDir() {
+				if pathExcluded(filename, opts.ExcludePathSubstrings) {
+					return filepath.SkipDir
+				}
 				if shouldSkipDir(filename, opts.IncludeVendor) {
 					return filepath.SkipDir
 				}
@@ -110,6 +117,9 @@ func CheckPaths(paths []string, opts Options) ([]Diagnostic, error) {
 				return nil
 			}
 			if opts.SkipTests && strings.HasSuffix(info.Name(), "_test.go") {
+				return nil
+			}
+			if pathExcluded(filename, opts.ExcludePathSubstrings) {
 				return nil
 			}
 			files = append(files, filename)
@@ -131,6 +141,9 @@ func CheckFiles(files []string, opts Options) ([]Diagnostic, error) {
 	data := make([]*syntax.Node, 0, 100)
 	for _, filename := range files {
 		if opts.SkipTests && strings.HasSuffix(filename, "_test.go") {
+			continue
+		}
+		if pathExcluded(filename, opts.ExcludePathSubstrings) {
 			continue
 		}
 		root, err := golang.Parse(filename)
@@ -243,6 +256,15 @@ func shouldSkipDir(path string, includeVendor bool) bool {
 		return false
 	}
 	return filepath.Base(path) == "vendor"
+}
+
+func pathExcluded(path string, substrings []string) bool {
+	for _, substring := range substrings {
+		if substring != "" && strings.Contains(path, substring) {
+			return true
+		}
+	}
+	return false
 }
 
 func diagnosticsFromGroups(groups map[string][][]*syntax.Node) ([]Diagnostic, error) {

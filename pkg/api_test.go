@@ -50,6 +50,17 @@ func second(xs []int) int {
 		t.Fatal("expected DuplicateOf metadata")
 	}
 
+	filtered, err := CheckFiles([]string{filename}, Options{
+		Threshold:             5,
+		ExcludePathSubstrings: []string{filepath.Base(filename)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(filtered) != 0 {
+		t.Fatalf("expected path filter to exclude diagnostics, got %#v", filtered)
+	}
+
 	report := DiagnosticsToGolangCILintJSON(diagnostics)
 	data, err := json.Marshal(report)
 	if err != nil {

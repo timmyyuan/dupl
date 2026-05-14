@@ -71,6 +71,7 @@ import (
 func main() {
 	opts := dupl.DefaultOptions()
 	opts.Threshold = 100
+	opts.ExcludePathSubstrings = []string{"vendor/generated"}
 
 	report, err := dupl.CheckGolangCILintJSON([]string{"."}, opts)
 	if err != nil {
@@ -86,7 +87,9 @@ func main() {
 ```
 
 Use `CheckPaths` when you need Heuris-native diagnostics with clone group
-metadata such as `Hash`, `GroupID`, and `DuplicateOf`.
+metadata such as `Hash`, `GroupID`, and `DuplicateOf`. Set
+`ExcludePathSubstrings` to skip any file path that contains one of the configured
+substrings.
 
 ## Example
 
